@@ -20,64 +20,49 @@ batch_num = 16
 def convert_path(path):
     return path.replace("\\", "/")
 
-train_path = convert_path(os.path.join('E:', 'vision', 'project', 'FECNet-master (1)', 'FECNet-master', 'data', 'train'))
-test_path = convert_path(os.path.join('E:', 'vision', 'project', 'FECNet-master (1)', 'FECNet-master', 'data', 'test'))
+train_path = convert_path(os.path.join('E:/', 'vision', 'project', 'FECNet-master (1)', 'FECNet-master', 'data', 'train'))
+test_path = convert_path(os.path.join('E:/', 'vision', 'project', 'FECNet-master (1)', 'FECNet-master', 'data', 'test'))
 
 def readData(train_path, test_path):
-    subpath1 = []
-    imdb1 = []
-    for item in os.listdir(train_path):
-        subpath1.append(convert_path(os.path.join(train_path, item)))
+    def get_image_paths_and_labels(base_path):
+        image_paths = []
+        labels = []
+        for root, _, files in os.walk(base_path):
+            for file in files:
+                if file.endswith(('jpg', 'jpeg', 'png')):
+                    image_path = os.path.join(root, file)
+                    label = os.path.basename(root)  # Assuming the folder name is the class label
+                    image_paths.append(image_path)
+                    labels.append(label) # Assuming the folder name is the class index
+        return image_paths, labels
 
-    for items1 in subpath1:
-        for items2 in os.listdir(items1):
-            p = convert_path(os.path.join(items1, items2))
-            imdb1.append(p)
+    train_image_paths, train_labels = get_image_paths_and_labels(train_path)
+    test_image_paths, test_labels = get_image_paths_and_labels(test_path)
 
-    trainX = []
-    trainY = []
-    for imagepath in imdb1:
-        image = Image.open(imagepath)
-        img = image.resize((224, 224))
-        trainX.append(np.array(img))
-        image_class = os.path.basename(os.path.dirname(imagepath))
-        trainY.append(int(image_class))
+    def load_and_preprocess_images(image_paths):
+        images = []
+        for image_path in image_paths:
+            try:
+                image = Image.open(image_path)
+                image = image.resize((height, width))
+                images.append(np.array(image))
+            except Exception as e:
+                print(f"Error processing {image_path}: {e}")
+        return np.array(images)
 
-    Xtrain = np.array(trainX)
-    Y_train = np.array(trainY)
-    X_train = Xtrain.reshape(Xtrain.shape[0], 224, 224, 3)
+    X_train = load_and_preprocess_images(train_image_paths)
+    X_test = load_and_preprocess_images(test_image_paths)
 
-    subpath2 = []
-    imdb2 = []
-    for item in os.listdir(test_path):
-        subpath2.append(convert_path(os.path.join(test_path, item)))
+    Y_train = np.array(train_labels)
+    Y_test = np.array(test_labels)
 
-    for items1 in subpath2:
-        for items2 in os.listdir(items1):
-            p = convert_path(os.path.join(items1, items2))
-            imdb2.append(p)
-
-    testX = []
-    testY = []
-    for imagepath in imdb2:
-        image = Image.open(imagepath)
-        img = image.resize((224, 224))
-        testX.append(np.array(img))
-        image_class = os.path.basename(os.path.dirname(imagepath))
-        testY.append(int(image_class))
-
-    Xtest = np.array(testX)
-    Y_test = np.array(testY)
-    X_test = Xtest.reshape(Xtest.shape[0], 224, 224, 3)
     return X_train, Y_train, X_test, Y_test
 
 x, img_input = FEC.create_model()
 X_train, Y_train, X_test, Y_test = readData(train_path, test_path)
 
 Y_train = np_utils.to_categorical(Y_train, nb_classes)
-Y_train = Y_train.reshape((Y_train.shape[0], 1, Y_train.shape[1]))
 Y_test = np_utils.to_categorical(Y_test, nb_classes)
-Y_test = Y_test.reshape((Y_test.shape[0], 1, Y_test.shape[1]))
 
 x = Dense(1024, activation='relu', name='final_dense1')(x)
 x = Dropout(0.5, name='final_drop')(x)
@@ -89,10 +74,9 @@ callbacks = [reduce_learning_rate]
 
 model = Model(inputs=img_input, outputs=predictions)
 model.summary()
-model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy', metrics=['acc'])
+model.compile(optimizer=Adam(learning_rate=0.001), loss='categorical_crossentropy', metrics=['acc'])
 
-model.fit(X_train, Y_train,
-          batch_size=32, nb_epoch=100, verbose=1, callbacks=callbacks)
+model.fit(X_train, Y_train, batch_size=batch_size, epochs=100, verbose=1, callbacks=callbacks)
 
-score = model.evaluate(X_test, Y_test, batch_size=32)
+score = model.evaluate(X_test, Y_test, batch_size=batch_size)
 print(score)
