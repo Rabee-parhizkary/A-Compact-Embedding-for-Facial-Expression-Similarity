@@ -5,7 +5,7 @@ from keras.api.layers import Conv2D, MaxPooling2D, AveragePooling2D, ZeroPadding
 from keras.api.layers import Flatten, Dense, Dropout,BatchNormalization, Activation, Lambda
 from keras.api.regularizers import l2
 from keras.api.layers import Input, Concatenate, concatenate
-import keras.api.backend as K
+import tensorflow.python.keras.backend as K
 import tensorflow as tf
 from keras.api.models import Model,load_model
 
@@ -220,7 +220,7 @@ if __name__=='__main__':
     model = Model(inputs=img_input,outputs=[x])
     model.summary()
     from keras.api.optimizers import Adam
-    model.compile(loss=triplet_loss, optimizer=Adam(lr=0.0005))# Follow the original paper
+    model.compile(loss=triplet_loss, optimizer=Adam(lr=0.0001))# Follow the original paper
     #In original paper, they train 50K iterations
     model.fit(x=train_x, y=train_y, nb_epoch=50, batch_size=batch_num*3,shuffle=False)
     model.save("FECNet1.h5")
