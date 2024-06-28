@@ -90,7 +90,7 @@ if __name__ == '__main__':
     transform = transforms.Compose([  # transforms.Grayscale(),
         transforms.Resize((100, 100)), transforms.ToTensor()])
 
-    coefficient_size = 0.01
+    coefficient_size = 0.1
     train_size_init = 12414
     test_size_init = 18954
     test_size = int(test_size_init * coefficient_size)
@@ -108,11 +108,11 @@ if __name__ == '__main__':
     if use_cuda:
         net.cuda()
 
-    total_epoch = 1
+    total_epoch = 20
     init_lr = 0.0005
 
     criterion = nn.TripletMarginLoss(margin=0.2)
     optimizer = optim.SGD(params=net.parameters(), lr=init_lr * 50, momentum=0.9, weight_decay=5e-4)
 
-    for i in tqdm(range(total_epoch)):
+    for i in tqdm(range(total_epoch), desc='Main training'):
         train(i, net, use_cuda, trainloader, optimizer, criterion, model_name='Dense Net')
