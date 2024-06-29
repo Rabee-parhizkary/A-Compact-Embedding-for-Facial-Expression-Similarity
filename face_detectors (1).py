@@ -14,15 +14,47 @@ import os
 from google.colab.patches import cv2_imshow
 
 
-modelFile = "/res10_300x300_ssd_iter_140000 (1).caffemodel"
-configFile = "/deploy (1).prototxt"
+import cv2
+import numpy as np
+from mtcnn import MTCNN
+
+
+# Initialize the MTCNN face detector
+detector = MTCNN()
+
+def detect_and_mask_face(image_path):
+    img = cv2.imread(image_path)
+
+    if img is None:
+        print("Error loading image. Please check the path and try again.")
+        return None
+
+    # Detect faces in the image
+    result = detector.detect_faces(img)
+
+    if len(result) == 0:
+        print("No faces detected.")
+        return None
+
+    # Create a mask with the same dimensions as the image, initialized to black
+    mask = np.zeros_like(img)
+
+    # Draw the detected face region on the mask
+    for face in result:
+        x, y, width, height = face['box']
+        mask[y:y+height, x:x+width] = img[y:y+height, x:x+width]
+
+    return mask
+
+modelFile = "/content/res10_300x300_ssd_iter_140000 (1).caffemodel"
+configFile = "/content/deploy (1).prototxt"
 
 # Load pre-trained model and configuration files
 net = cv2.dnn.readNetFromCaffe(configFile, modelFile)
 
 # Load the pre-trained Haar Cascade classifiers for face detection
-frontal_face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-profile_face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_profileface.xml')
+#frontal_face_cascade = cv2.CascadeCla ssifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+#profile_face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_profileface.xml')
 
 # Define a public variable count
 count = 0
@@ -139,7 +171,8 @@ def process_images_in_folder(folder_path):
             image = dnn_face_highlighter(image_path)
             cv2_imshow(image)
     return count, total_images
-
+image_path = "/content/12291745_20ec37e3a6_z.jpg"
+image = dnn_face_highlighter(image_path)
 
 folder_path = '/content/drive/MyDrive/vision project/data'  # Replace with the actual folder path
 count, total_images = process_images_in_folder(folder_path)
@@ -148,5 +181,4 @@ if total_images > 0:
 else:
     print("No images found in the specified folder.")
 
-
-
+pip install mtcnn opencv-python
