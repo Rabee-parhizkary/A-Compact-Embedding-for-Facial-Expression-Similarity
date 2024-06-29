@@ -16,6 +16,8 @@ import datas
 import models.Cleaner
 from eval_metrics import evaluate
 from models.ModelDenseNet import DenseNet3
+from models.ModelLessDenseNet import LessDenseNet
+from models.ModelSEDenseNet import SEDenseNet
 
 
 # Training
@@ -54,7 +56,7 @@ def train(epoch, net, use_cuda, trainloader, optimizer, criterion, model_name):
     if not os.path.exists(check_points_dir):
         os.makedirs(check_points_dir)
 
-    torch.save(net, check_points_path)
+    # torch.save(net, check_points_path)
     avg_triplet_loss = triplet_loss_sum / trainset.__len__()
     labels = np.array([sublabel for label in labels for sublabel in label])
     distances = np.array([subdist for dist in distances for subdist in dist])
@@ -90,7 +92,7 @@ if __name__ == '__main__':
     transform = transforms.Compose([  # transforms.Grayscale(),
         transforms.Resize((100, 100)), transforms.ToTensor()])
 
-    coefficient_size = 0.1
+    coefficient_size = 0.15
     train_size_init = 12414
     test_size_init = 18954
     test_size = int(test_size_init * coefficient_size)
@@ -102,17 +104,20 @@ if __name__ == '__main__':
 
     print('Finished loading data')
 
-    net = DenseNet3(growth_rate=32, depth=30, reduction=0.5,
-                    bottleneck=True, num_classes=16)
+    net = SEDenseNet(growth_rate=16, depth=20,
+                       bottleneck=True, num_classes=16)
+
+    # net = SEDenseNet(growth_rate=32, depth=30, reduction=0.5,
+    #                         bottleneck=True, num_classes=16)
 
     if use_cuda:
         net.cuda()
 
     total_epoch = 20
-    init_lr = 0.0005
+    init_lr = 0.0004
 
     criterion = nn.TripletMarginLoss(margin=0.2)
     optimizer = optim.SGD(params=net.parameters(), lr=init_lr * 50, momentum=0.9, weight_decay=5e-4)
 
     for i in tqdm(range(total_epoch), desc='Main training'):
-        train(i, net, use_cuda, trainloader, optimizer, criterion, model_name='Dense Net')
+        train(i, net, use_cuda, trainloader, optimizer, criterion, model_name='Shallow Squeeze Excitation Dense Net New')
